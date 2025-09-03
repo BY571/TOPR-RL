@@ -4,7 +4,7 @@ env:
   task: ""
   library: gym
   max_episode_steps: 1000
-  seed: 42
+  seed: 41
 
 # collector
 collector:
@@ -56,3 +56,9 @@ compile:
   compile: False
   compile_mode:
   cudagraphs: False
+
+
+# eval
+eval_steps: 100_000_000
+weight_path: ""
+policy_type: "expert"
