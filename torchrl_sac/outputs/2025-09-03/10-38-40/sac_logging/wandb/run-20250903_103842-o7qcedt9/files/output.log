@@ -1,8 +1,0 @@
-/home/sebastian/anaconda3/envs/torch_rl/lib/python3.9/site-packages/gym/envs/registration.py:423: UserWarning: [33mWARN: Custom namespace `ALE` is being overridden by namespace `ALE`. If you are developing a plugin you shouldn't specify a namespace in `register` calls. The namespace is specified through the entry point package metadata.[0m
-  logger.warn(
-Warning: Gym version v0.24.0 has a number of critical issues with `gym.make` such that the `reset` and `step` functions are called before returning the environment. It is recommend to downgrading to v0.23.1 or upgrading to v0.25.1
-/home/sebastian/anaconda3/envs/torch_rl/lib/python3.9/site-packages/torch/nn/modules/lazy.py:181: UserWarning: Lazy modules are a new feature under heavy development so changes to the API or functionality can happen at any moment.
-  warnings.warn('Lazy modules are a new feature under heavy development '
-/home/sebastian/anaconda3/envs/torch_rl/lib/python3.9/site-packages/torchrl/envs/batched_envs.py:2317: UserWarning: Sending a seeded ParallelEnv to another device requires re-seeding it. Re-seeding envs to [42, 1445067485, 3334094167, 3585780589, 2792652595, 3481998204, 395747745, 79072177].
-  warn(
-  0%|                                                        | 0/1000000 [00:00<?, ?it/s]
