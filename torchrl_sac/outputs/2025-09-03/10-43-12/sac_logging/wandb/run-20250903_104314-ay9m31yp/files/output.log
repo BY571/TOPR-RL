@@ -1,0 +1,29 @@
+/home/sebastian/anaconda3/envs/torch_rl/lib/python3.9/site-packages/gym/envs/registration.py:423: UserWarning: [33mWARN: Custom namespace `ALE` is being overridden by namespace `ALE`. If you are developing a plugin you shouldn't specify a namespace in `register` calls. The namespace is specified through the entry point package metadata.[0m
+  logger.warn(
+Warning: Gym version v0.24.0 has a number of critical issues with `gym.make` such that the `reset` and `step` functions are called before returning the environment. It is recommend to downgrading to v0.23.1 or upgrading to v0.25.1
+/home/sebastian/anaconda3/envs/torch_rl/lib/python3.9/site-packages/torch/nn/modules/lazy.py:181: UserWarning: Lazy modules are a new feature under heavy development so changes to the API or functionality can happen at any moment.
+  warnings.warn('Lazy modules are a new feature under heavy development '
+/home/sebastian/anaconda3/envs/torch_rl/lib/python3.9/site-packages/torchrl/envs/batched_envs.py:2317: UserWarning: Sending a seeded ParallelEnv to another device requires re-seeding it. Re-seeding envs to [42, 1445067485, 3334094167, 3585780589, 2792652595, 3481998204, 395747745, 79072177].
+  warn(
+  1%|▎                                          | 8000/1000000 [00:20<11:13, 1473.18it/s]
+[92m2025-09-03 10:43:28,227 [torchrl][INFO][0m    collect took 2479.5313 msec (total =  2.4795 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:28,228 [torchrl][INFO][0m    rb - extend took 15.8856 msec (total =  0.0159 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:28,228 [torchrl][INFO][0m    train took 0.0045 msec (total =  0.0000 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:31,695 [torchrl][INFO][0m    collect took 3463.6648 msec (total =  3.4637 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:31,695 [torchrl][INFO][0m    rb - extend took 1.3418 msec (total =  0.0013 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:31,695 [torchrl][INFO][0m    train took 0.0038 msec (total =  0.0000 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:32,187 [torchrl][INFO][0m    collect took 489.4843 msec (total =  0.4895 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:32,188 [torchrl][INFO][0m    rb - extend took 1.1978 msec (total =  0.0012 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:32,188 [torchrl][INFO][0m    train took 0.0026 msec (total =  0.0000 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:32,667 [torchrl][INFO][0m    collect took 477.2770 msec (total =  0.4773 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:32,668 [torchrl][INFO][0m    rb - extend took 1.1029 msec (total =  0.0011 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:32,668 [torchrl][INFO][0m    train took 0.0026 msec (total =  0.0000 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:33,093 [torchrl][INFO][0m    collect took 422.4260 msec (total =  0.4224 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:33,093 [torchrl][INFO][0m    rb - extend took 1.1232 msec (total =  0.0011 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:33,093 [torchrl][INFO][0m    train took 0.0024 msec (total =  0.0000 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:33,515 [torchrl][INFO][0m    collect took 419.4968 msec (total =  0.4195 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:33,516 [torchrl][INFO][0m    rb - extend took 1.2245 msec (total =  0.0012 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:33,516 [torchrl][INFO][0m    train took 0.0026 msec (total =  0.0000 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:34,021 [torchrl][INFO][0m    collect took 502.1122 msec (total =  0.5021 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:34,021 [torchrl][INFO][0m    rb - extend took 1.1787 msec (total =  0.0012 sec since last reset).[92m [END][0m
+[92m2025-09-03 10:43:34,021 [torchrl][INFO][0m    train took 0.0026 msec (total =  0.0000 sec since last reset).[92m [END][0m

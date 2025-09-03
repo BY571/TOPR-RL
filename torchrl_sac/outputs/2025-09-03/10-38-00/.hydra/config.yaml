@@ -1,0 +1,48 @@
+env:
+  name: HalfCheetah-v4
+  task: ''
+  library: gymnasium
+  max_episode_steps: 1000
+  seed: 42
+collector:
+  total_frames: 1000000
+  init_random_frames: 25000
+  frames_per_batch: 1000
+  init_env_steps: 1000
+  device: null
+  env_per_collector: 8
+  reset_at_each_iter: false
+replay_buffer:
+  size: 1000000
+  prb: 0
+  scratch_dir: null
+optim:
+  utd_ratio: 1.0
+  gamma: 0.99
+  loss_function: l2
+  lr: 0.0003
+  weight_decay: 0.0
+  batch_size: 256
+  target_update_polyak: 0.995
+  alpha_init: 1.0
+  adam_eps: 1.0e-08
+network:
+  hidden_sizes:
+  - 256
+  - 256
+  activation: relu
+  default_policy_scale: 1.0
+  scale_lb: 0.1
+  device: null
+logger:
+  backend: wandb
+  project_name: TOPR-RL
+  group_name: null
+  exp_name: ${env.name}_SAC_TorchRL
+  mode: online
+  eval_iter: 25000
+  video: false
+compile:
+  compile: false
+  compile_mode: null
+  cudagraphs: false

@@ -1,0 +1,67 @@
+_wandb:
+    value:
+        cli_version: 0.21.3
+        e:
+            4yrcjtsqsw0n2d3namlu49ozibc4ca29:
+                codePath: torchrl_sac/sac.py
+                cpu_count: 16
+                cpu_count_logical: 24
+                cudaVersion: "12.9"
+                disk:
+                    /:
+                        total: "1006450962432"
+                        used: "675236880384"
+                email: sebastian.dittert3692@gmail.com
+                executable: /home/sebastian/anaconda3/envs/torch_rl/bin/python
+                git:
+                    commit: 2379b64393e074a46ce9900a050af91b1db54860
+                    remote: git@github.com:BY571/TOPR-RL.git
+                gpu: NVIDIA GeForce RTX 4060 Laptop GPU
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Ada
+                      cudaCores: 3072
+                      memoryTotal: "8585740288"
+                      name: NVIDIA GeForce RTX 4060 Laptop GPU
+                      uuid: GPU-94e56a01-4c66-4da9-d390-d3c642637e83
+                host: sebastian-Legion-Pro-5-16IRX8
+                memory:
+                    total: "33377996800"
+                os: Linux-6.8.0-79-generic-x86_64-with-glibc2.39
+                program: /home/sebastian/Documents/smaller_projects/TOPR-RL/torchrl_sac/sac.py
+                python: CPython 3.9.19
+                root: sac_logging
+                startedAt: "2025-09-03T08:40:01.507539Z"
+                writerId: 4yrcjtsqsw0n2d3namlu49ozibc4ca29
+        m: []
+        python_version: 3.9.19
+        t:
+            "1":
+                - 1
+                - 50
+                - 105
+            "2":
+                - 1
+                - 50
+                - 105
+            "3":
+                - 13
+                - 16
+            "4": 3.9.19
+            "5": 0.21.3
+            "12": 0.21.3
+            "13": linux-x86_64
+collector:
+    value: '{''total_frames'': 1000000, ''init_random_frames'': 25000, ''frames_per_batch'': 1000, ''init_env_steps'': 1000, ''device'': None, ''env_per_collector'': 8, ''reset_at_each_iter'': False}'
+compile:
+    value: '{''compile'': False, ''compile_mode'': None, ''cudagraphs'': False}'
+env:
+    value: '{''name'': ''HalfCheetah-v4'', ''task'': '''', ''library'': ''gym'', ''max_episode_steps'': 1000, ''seed'': 42}'
+logger:
+    value: '{''backend'': ''wandb'', ''project_name'': ''TOPR-RL'', ''group_name'': None, ''exp_name'': ''${env.name}_SAC_TorchRL'', ''mode'': ''online'', ''eval_iter'': 25000, ''video'': False}'
+network:
+    value: '{''hidden_sizes'': [256, 256], ''activation'': ''relu'', ''default_policy_scale'': 1.0, ''scale_lb'': 0.1, ''device'': None}'
+optim:
+    value: '{''utd_ratio'': 1.0, ''gamma'': 0.99, ''loss_function'': ''l2'', ''lr'': 0.0003, ''weight_decay'': 0.0, ''batch_size'': 256, ''target_update_polyak'': 0.995, ''alpha_init'': 1.0, ''adam_eps'': 1e-08}'
+replay_buffer:
+    value: '{''size'': 1000000, ''prb'': 0, ''scratch_dir'': None}'
