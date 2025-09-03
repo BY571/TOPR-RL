@@ -12,6 +12,8 @@ import hydra
 import numpy as np
 import torch
 import torch.cuda
+from tqdm import tqdm
+from torchrl._utils import timeit
 from torchrl.envs.utils import ExplorationType, set_exploration_type
 from utils import (
     make_environment,
@@ -32,9 +34,10 @@ def main(cfg: DictConfig):  # noqa: F821
             device = torch.device("cpu")
     device = torch.device(device)
 
-    eval_steps = 100_000_000
-    weight_path = ""
-    policy_type = "expert"
+    total_eval_steps = cfg.eval_steps
+    max_rollout_steps = cfg.env.max_episode_steps
+    weight_path = cfg.weight_path
+    policy_type = cfg.policy_type
 
     torch.manual_seed(cfg.env.seed)
     np.random.seed(cfg.env.seed)
@@ -58,18 +61,44 @@ def main(cfg: DictConfig):  # noqa: F821
     )
 
     # Run Evaluation
-    with set_exploration_type(
-        ExplorationType.DETERMINISTIC
-    ), torch.no_grad(), timeit("eval"):
-        eval_rollout = eval_env.rollout(
-            eval_steps,
-            model[0],
-            auto_cast_to_device=True,
-            break_when_any_done=False, # we want to continue sample until we reach the required steps
-        )
-    # could do some preprocessing here
-    replay_buffer.extend(eval_rollout)
+    total_collected = 0
+    pbar = tqdm(total=total_eval_steps, desc="Evaluating", unit="steps")
+    for i in range(1000):
+        with set_exploration_type(
+            ExplorationType.DETERMINISTIC
+        ), torch.no_grad(), timeit("eval"):
+            eval_rollout = eval_env.rollout(
+                max_rollout_steps,
+                model[0],
+                auto_cast_to_device=True,
+                break_when_any_done=True, # we want to continue sample until we reach the required steps
+            )
 
+        episode_end = (
+            eval_rollout["next", "done"]
+            if eval_rollout["next", "done"].any()
+            else eval_rollout["next", "truncated"]
+        )
+        episode_rewards = eval_rollout["next", "episode_reward"][episode_end]
+        episode_length = eval_rollout["next", "step_count"][episode_end]
+        print("*** Evaluation Stats: ***")
+        print(f"Episode rewards: {episode_rewards.mean()}")
+        print(f"Episode rewards std: {episode_rewards.std()}")
+        print(f"Episode count: {len(episode_rewards)}")
+        print(f"Episode length: {episode_length.sum() / len(episode_length)}")
+        # could do some preprocessing here
+        eval_rollout = eval_rollout.cpu().reshape(-1)
+        steps_collected = eval_rollout.batch_size[0]
+        total_collected += steps_collected
+        pbar.update(steps_collected)
+        pbar.set_postfix({
+            'collected': f'{total_collected}/{total_eval_steps}'
+        })
+        replay_buffer.extend(eval_rollout)
+        if total_collected >= total_eval_steps:
+            break
+
+    pbar.close()
     replay_buffer.dumps(f"./replay_buffer_{policy_type}.pt")
 
     
