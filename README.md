@@ -1,5 +1,9 @@
 # TOPR-TorchRL
 
+# Env setup
+
+create torchrl environment based on https://github.com/pytorch/rl
+
 
 # TODOS:
 
