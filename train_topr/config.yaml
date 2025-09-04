@@ -11,7 +11,7 @@ env:
 logger:
   backend: wandb
   project_name: TOPR-RL
-  exp_name: iql_expert
+  exp_name: topr_expert
   group_name: null
   eval_iter: 1000
   eval_steps: 1000
@@ -45,10 +45,6 @@ loss:
   loss_function: l2
   gamma: 0.99
   tau: 0.005
-
-# IQL specific hyperparameter
-  temperature: 3.0
-  expectile: 0.7
 
 compile:
   compile: False

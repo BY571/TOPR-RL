@@ -121,8 +121,9 @@ class PPOLoss(LossModule):
         log_explained_variance: bool = True,
         normalize_advantage: bool = False,
         normalize_advantage_exclude_dims: tuple[int] = (),
-        gamma: float | None = None,
         advantage_key: str = None,
+        ref_logprob_key: str = None,
+        reward2go_key: str = None,
         functional: bool = True,
         actor: ProbabilisticTensorDictSequential = None,
         reduction: str = None,
@@ -155,7 +156,6 @@ class PPOLoss(LossModule):
         self.log_explained_variance = log_explained_variance
         self.samples_mc_entropy = samples_mc_entropy
         self.entropy_bonus = entropy_bonus
-        self.separate_losses = separate_losses
         self.reduction = reduction
 
         if device is None:
@@ -201,9 +201,6 @@ class PPOLoss(LossModule):
 
         self.normalize_advantage = normalize_advantage
         self.normalize_advantage_exclude_dims = normalize_advantage_exclude_dims
-
-        if gamma is not None:
-            raise TypeError(_GAMMA_LMBDA_DEPREC_ERROR)
 
         if clip_value is not None:
             if isinstance(clip_value, float):
@@ -414,32 +411,16 @@ class PPOLoss(LossModule):
     @dispatch
     def forward(self, tensordict: TensorDictBase) -> TensorDictBase:
         tensordict = tensordict.clone(False)
-        advantage = tensordict.get(self.tensor_keys.advantage, None)
-        if advantage is None:
-            self.value_estimator(
-                tensordict,
-                params=self._cached_critic_network_params_detached,
-                target_params=self.target_critic_network_params,
-            )
-            advantage = tensordict.get(self.tensor_keys.advantage)
-        if self.normalize_advantage and advantage.numel() > 1:
-            if advantage.numel() > tensordict.batch_size.numel() and not len(
-                self.normalize_advantage_exclude_dims
-            ):
-                warnings.warn(
-                    "You requested advantage normalization and the advantage key has more dimensions"
-                    " than the tensordict batch. Make sure to pass `normalize_advantage_exclude_dims` "
-                    "if you want to keep any dimension independent while computing normalization statistics. "
-                    "If you are working in multi-agent/multi-objective settings this is highly suggested."
-                )
-            advantage = _standardize(advantage, self.normalize_advantage_exclude_dims)
+
 
         log_weight, dist, kl_approx = self._log_weight(
             tensordict, adv_shape=advantage.shape[:-1]
         )
-        neg_loss = log_weight.exp() * advantage
+        neg_loss = log_weight.exp() * reward2go
         td_out = TensorDict({"loss_objective": -neg_loss})
+        
         td_out.set("kl_approx", kl_approx.detach().mean())  # for logging
+        
         if self.entropy_bonus:
             entropy = self._get_entropy(dist, adv_shape=advantage.shape[:-1])
             if is_tensor_collection(entropy):
@@ -451,15 +432,7 @@ class PPOLoss(LossModule):
             else:
                 td_out.set("entropy", entropy.detach().mean())  # for logging
             td_out.set("loss_entropy", self._weighted_loss_entropy(entropy))
-        if self._has_critic:
-            loss_critic, value_clip_fraction, explained_variance = self.loss_critic(
-                tensordict
-            )
-            td_out.set("loss_critic", loss_critic)
-            if value_clip_fraction is not None:
-                td_out.set("value_clip_fraction", value_clip_fraction)
-            if explained_variance is not None:
-                td_out.set("explained_variance", explained_variance)
+        
         td_out = td_out.named_apply(
             lambda name, value: _reduce(value, reduction=self.reduction).squeeze(-1)
             if name.startswith("loss_")
