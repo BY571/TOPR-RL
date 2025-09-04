@@ -40,7 +40,6 @@ from torchrl.objectives.utils import (
     _reduce,
     _sum_td_features,
     default_value_kwargs,
-    distance_loss,
     ValueEstimators,
 )
 from torchrl.objectives.value import (
@@ -52,7 +51,7 @@ from torchrl.objectives.value import (
 )
 
 
-class PPOLoss(LossModule):
+class TOPRLoss(LossModule):
     """TOPR Loss based on the paper: https://arxiv.org/pdf/2503.14286v2
     
     """
@@ -115,19 +114,20 @@ class PPOLoss(LossModule):
         self,
         actor_network: ProbabilisticTensorDictSequential | None = None,
         *,
-        entropy_bonus: bool = True,
+        entropy_bonus: bool = False,
         samples_mc_entropy: int = 1,
         entropy_coeff: float | Mapping[NestedKey, float] | None = None,
         log_explained_variance: bool = True,
         normalize_advantage: bool = False,
         normalize_advantage_exclude_dims: tuple[int] = (),
         advantage_key: str = None,
-        ref_logprob_key: str = None,
-        reward2go_key: str = None,
+        ref_logprob_key: str = "ref_logprob",
+        reward2go_key: str = "reward2go",
         functional: bool = True,
         actor: ProbabilisticTensorDictSequential = None,
         reduction: str = None,
-        clip_value: float | None = None,
+        neg_clip_value: float = 0,
+        pos_clip_value: float = 1,
         device: torch.device | None = None,
         **kwargs,
     ):
@@ -157,6 +157,8 @@ class PPOLoss(LossModule):
         self.samples_mc_entropy = samples_mc_entropy
         self.entropy_bonus = entropy_bonus
         self.reduction = reduction
+        self.ref_logprob_key = ref_logprob_key
+        self.reward2go_key = reward2go_key
 
         if device is None:
             try:
@@ -202,28 +204,12 @@ class PPOLoss(LossModule):
         self.normalize_advantage = normalize_advantage
         self.normalize_advantage_exclude_dims = normalize_advantage_exclude_dims
 
-        if clip_value is not None:
-            if isinstance(clip_value, float):
-                clip_value = torch.tensor(clip_value, device=device)
-            elif isinstance(clip_value, torch.Tensor):
-                if clip_value.numel() != 1:
-                    raise ValueError(
-                        f"clip_value must be a float or a scalar tensor, got {clip_value}."
-                    )
-            else:
-                raise ValueError(
-                    f"clip_value must be a float or a scalar tensor, got {clip_value}."
-                )
-            self.register_buffer("clip_value", clip_value.to(device))
-        else:
-            self.clip_value = None
+        self.register_buffer("neg_clip_value", torch.tensor(neg_clip_value))
+        self.register_buffer("pos_clip_value", torch.tensor(pos_clip_value))
         try:
             log_prob_keys = self.actor_network.log_prob_keys
             action_keys = self.actor_network.dist_sample_keys
-            if len(log_prob_keys) > 1:
-                self.set_keys(sample_log_prob=log_prob_keys, action=action_keys)
-            else:
-                self.set_keys(sample_log_prob=log_prob_keys[0], action=action_keys[0])
+            self.set_keys(sample_log_prob=log_prob_keys[0], action=action_keys[0])
         except AttributeError:
             pass
 
@@ -270,18 +256,6 @@ class PPOLoss(LossModule):
     def out_keys(self, values):
         self._out_keys = values
 
-    def _forward_value_estimator_keys(self, **kwargs) -> None:
-        if hasattr(self, "_value_estimator") and self._value_estimator is not None:
-            self._value_estimator.set_keys(
-                advantage=self.tensor_keys.advantage,
-                value_target=self.tensor_keys.value_target,
-                value=self.tensor_keys.value,
-                reward=self.tensor_keys.reward,
-                done=self.tensor_keys.done,
-                terminated=self.tensor_keys.terminated,
-                sample_log_prob=self.tensor_keys.sample_log_prob,
-            )
-        self._set_in_keys()
 
     def reset(self) -> None:
         pass
@@ -361,13 +335,9 @@ class PPOLoss(LossModule):
         return log_prob, dist, is_composite
 
     def _log_weight(
-        self, tensordict: TensorDictBase, adv_shape: torch.Size
+        self, tensordict: TensorDictBase
     ) -> tuple[torch.Tensor, d.Distribution, torch.Tensor]:
-        prev_log_prob = _maybe_get_or_select(
-            tensordict,
-            self.tensor_keys.sample_log_prob,
-            adv_shape,
-        )
+        prev_log_prob = tensordict.get(self.tensor_keys.sample_log_prob)
         if prev_log_prob is None:
             raise KeyError(
                 f"Couldn't find the log-prob {self.tensor_keys.sample_log_prob} in the input data."
@@ -404,7 +374,7 @@ class PPOLoss(LossModule):
         if is_tensor_collection(kl_approx):
             kl_approx = _sum_td_features(kl_approx)
 
-        return log_weight, dist, kl_approx
+        return log_weight, dist, kl_approx, log_prob
 
 
 
@@ -413,12 +383,19 @@ class PPOLoss(LossModule):
         tensordict = tensordict.clone(False)
 
 
-        log_weight, dist, kl_approx = self._log_weight(
-            tensordict, adv_shape=advantage.shape[:-1]
+        log_weight, dist, kl_approx, log_prob = self._log_weight(
+            tensordict
         )
-        neg_loss = log_weight.exp() * reward2go
+
+        clipped_weight = torch.clamp(log_weight.exp().detach(),
+        -self.neg_clip_value.to(log_weight.device),
+        self.pos_clip_value.to(log_weight.device))
+
+        reward2go = tensordict.get(("next", "reward2go"))
+        reward2go = reward2go - reward2go.mean() # subtract baseline
+        neg_loss = clipped_weight * reward2go * log_prob
         td_out = TensorDict({"loss_objective": -neg_loss})
-        
+
         td_out.set("kl_approx", kl_approx.detach().mean())  # for logging
         
         if self.entropy_bonus:
@@ -445,51 +422,6 @@ class PPOLoss(LossModule):
         )
         return td_out
 
-    def make_value_estimator(self, value_type: ValueEstimators = None, **hyperparams):
-        if value_type is None:
-            value_type = self.default_value_estimator
-        self.value_type = value_type
-        hp = dict(default_value_kwargs(value_type))
-        if hasattr(self, "gamma"):
-            hp["gamma"] = self.gamma
-        hp.update(hyperparams)
-        if value_type == ValueEstimators.TD1:
-            self._value_estimator = TD1Estimator(
-                value_network=self.critic_network, **hp
-            )
-        elif value_type == ValueEstimators.TD0:
-            self._value_estimator = TD0Estimator(
-                value_network=self.critic_network, **hp
-            )
-        elif value_type == ValueEstimators.GAE:
-            self._value_estimator = GAE(value_network=self.critic_network, **hp)
-        elif value_type == ValueEstimators.TDLambda:
-            self._value_estimator = TDLambdaEstimator(
-                value_network=self.critic_network, **hp
-            )
-        elif value_type == ValueEstimators.VTrace:
-            # VTrace currently does not support functional call on the actor
-            if self.functional:
-                actor_with_params = deepcopy(self.actor_network)
-                self.actor_network_params.to_module(actor_with_params)
-            else:
-                actor_with_params = self.actor_network
-            self._value_estimator = VTrace(
-                value_network=self.critic_network, actor_network=actor_with_params, **hp
-            )
-        else:
-            raise NotImplementedError(f"Unknown value type {value_type}")
-
-        tensor_keys = {
-            "advantage": self.tensor_keys.advantage,
-            "value": self.tensor_keys.value,
-            "value_target": self.tensor_keys.value_target,
-            "reward": self.tensor_keys.reward,
-            "done": self.tensor_keys.done,
-            "terminated": self.tensor_keys.terminated,
-            "sample_log_prob": self.tensor_keys.sample_log_prob,
-        }
-        self._value_estimator.set_keys(**tensor_keys)
 
     def _weighted_loss_entropy(
         self, entropy: torch.Tensor | TensorDictBase

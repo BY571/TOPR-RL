@@ -192,8 +192,9 @@ def make_offline_replay_buffer(rb_cfg):
     del data
     # add reward2go
     from torchrl.objectives.value.functional import reward2go
-    rewardtogo = reward2go(td.get(("next", "reward")), td.get("done"), gamma=rb_cfg.gamma)
-    td.set(("next", "reward2go"), rewardtogo)
+    rewardtogo = reward2go(td.get(("next", "reward")), td.get("done"), gamma=rb_cfg.r2g_gamma)
+    td = td.clone().set(("next", "reward2go"), rewardtogo)
+
 
     data = TensorDictReplayBuffer(
         pin_memory=False,
@@ -286,18 +287,11 @@ def make_topr_module_state(model_cfg, proof_environment):
 
 def make_loss(loss_cfg, model, device):
     # TODO
-    loss_module = IQLLoss(
+    loss_module = TOPRLoss(
         model[0],
-        model[1],
-        value_network=model[2],
-        loss_function=loss_cfg.loss_function,
-        temperature=loss_cfg.temperature,
-        expectile=loss_cfg.expectile,
     )
-    loss_module.make_value_estimator(gamma=loss_cfg.gamma, device=device)
-    target_net_updater = SoftUpdate(loss_module, tau=loss_cfg.tau)
 
-    return loss_module, target_net_updater
+    return loss_module
 
 
 def make_topr_optimizer(optim_cfg, loss_module):
