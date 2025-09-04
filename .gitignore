@@ -173,3 +173,5 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 torchrl_sac/outputs/*
+train_iql/outputs/*
+
