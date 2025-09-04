@@ -17,3 +17,5 @@ create torchrl environment based on https://github.com/pytorch/rl
 
 4. If successful run on more datasets -> repeat 1&3
 5. Paper?
+
+4.2. Can we make it online??
