@@ -15,7 +15,7 @@ create torchrl environment based on https://github.com/pytorch/rl
 2. Run tests for IQL, CQL, TD3+BC
   Track reward, run-time.
 
-  -- DONE -- Training scripts working for IQL, extension to CQL, TD3+BC can be added quickly [X]
+    -- DONE -- Training scripts working for IQL, extension to CQL, TD3+BC can be added quickly [X]
 
 3. Implement TOPR for RL. Check what adaptations need to be done for RL. discounted reward etc maybe ask chatgpt.
 
