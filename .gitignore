@@ -174,4 +174,5 @@ cython_debug/
 .pypirc
 torchrl_sac/outputs/*
 train_iql/outputs/*
+train_topr/outputs/*
 
