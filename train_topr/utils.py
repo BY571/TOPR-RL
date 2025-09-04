@@ -192,7 +192,7 @@ def make_offline_replay_buffer(rb_cfg):
     del data
     # add reward2go
     from torchrl.objectives.value.functional import reward2go
-    rewardtogo = reward2go(td.get(("next", "reward")), td.get("done"), gamma=0.99)
+    rewardtogo = reward2go(td.get(("next", "reward")), td.get("done"), gamma=rb_cfg.gamma)
     td.set(("next", "reward2go"), rewardtogo)
 
     data = TensorDictReplayBuffer(
