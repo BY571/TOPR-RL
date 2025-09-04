@@ -92,8 +92,13 @@ def main(cfg: DictConfig):  # noqa: F821
         # compute losses
         loss_info = loss_module(data)
         actor_loss = loss_info["loss_objective"]
+        if cfg.loss.entropy_bonus:
+            entropy_loss = loss_info["loss_entropy"]
+        else:
+            entropy_loss = torch.zeros_like(actor_loss)
+        loss = actor_loss + entropy_loss
 
-        actor_loss.backward()
+        loss.backward()
         optimizer.step()
 
         return loss_info.detach()

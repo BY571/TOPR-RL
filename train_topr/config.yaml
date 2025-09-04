@@ -42,9 +42,7 @@ model:
 
 # loss
 loss: 
-  loss_function: l2
-  gamma: 0.99
-  tau: 0.005
+  entropy_bonus: True
 
 compile:
   compile: False

@@ -289,6 +289,7 @@ def make_loss(loss_cfg, model, device):
     # TODO
     loss_module = TOPRLoss(
         model[0],
+        entropy_bonus=loss_cfg.entropy_bonus,
     )
 
     return loss_module

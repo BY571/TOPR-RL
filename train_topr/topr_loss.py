@@ -380,21 +380,20 @@ class TOPRLoss(LossModule):
             tensordict
         )
 
-        # log_weight = torch.clamp(log_weight.exp().detach(),
-        # -self.neg_clip_value.to(log_weight.device),
-        # self.pos_clip_value.to(log_weight.device))
-
-        log_weight = log_weight.exp().detach()
-
         reward2go = tensordict.get(("next", "reward2go"))
-        #reward2go = reward2go - reward2go.mean() # subtract baseline
-        neg_loss = log_weight * reward2go * log_prob
+
+        # TOPR weights (canonical: a^- = 0, a^+ = b^+ = b^- = 1)
+        advantages = reward2go - reward2go.mean() # subtract baseline
+        log_weight = torch.clamp(log_weight.exp().detach(), 0, 1e6)
+        log_weight = torch.where(advantages > 0, torch.ones_like(log_weight), torch.clamp(log_weight, max=1.0))
+
+        neg_loss = log_weight * advantages * log_prob
         td_out = TensorDict({"loss_objective": -neg_loss})
 
         td_out.set("kl_approx", kl_approx.detach().mean())  # for logging
         
         if self.entropy_bonus:
-            entropy = self._get_entropy(dist, adv_shape=advantage.shape[:-1])
+            entropy = self._get_entropy(dist, adv_shape=advantages.shape[:-1])
             if is_tensor_collection(entropy):
                 # Reports the entropy of each action head.
                 td_out.set("composite_entropy", entropy.detach())
