@@ -382,7 +382,7 @@ class TOPRLoss(LossModule):
         #prev_log_prob = tensordict.get(self.tensor_keys.sample_log_prob)
         reward2go = tensordict.get(("next", "reward2go"))
 
-        
+        # TODO: try normalization of advantages
         advantages = reward2go #- reward2go.mean() # subtract baseline
         # TOPR weights (canonical: a^- = 0, a^+ = b^+ = b^- = 1)
         log_weight = log_weight.exp().detach()
