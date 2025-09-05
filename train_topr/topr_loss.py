@@ -375,22 +375,25 @@ class TOPRLoss(LossModule):
     def forward(self, tensordict: TensorDictBase) -> TensorDictBase:
         tensordict = tensordict.clone(False)
 
-
         log_weight, dist, kl_approx, log_prob = self._log_weight(
             tensordict
         )
 
+        #prev_log_prob = tensordict.get(self.tensor_keys.sample_log_prob)
         reward2go = tensordict.get(("next", "reward2go"))
 
+        
+        advantages = reward2go #- reward2go.mean() # subtract baseline
         # TOPR weights (canonical: a^- = 0, a^+ = b^+ = b^- = 1)
-        advantages = reward2go - reward2go.mean() # subtract baseline
-        log_weight = torch.clamp(log_weight.exp().detach(), 0, 1e6)
-        log_weight = torch.where(advantages > 0, torch.ones_like(log_weight), torch.clamp(log_weight, max=1.0))
+        log_weight = log_weight.exp().detach()
+        log_weight = torch.where(advantages > 0, torch.ones_like(log_weight), torch.clamp(log_weight, min=0, max=1.0))
+        negatives = (advantages < 0).sum()
 
-        neg_loss = log_weight * advantages * log_prob
+        neg_loss = log_weight * advantages * log_prob.unsqueeze(-1)
         td_out = TensorDict({"loss_objective": -neg_loss})
 
         td_out.set("kl_approx", kl_approx.detach().mean())  # for logging
+        td_out.set("negatives", negatives)
         
         if self.entropy_bonus:
             entropy = self._get_entropy(dist, adv_shape=advantages.shape[:-1])
