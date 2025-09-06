@@ -78,7 +78,7 @@ def main(cfg: DictConfig):  # noqa: F821
     replay_buffer = make_offline_replay_buffer(cfg.replay_buffer)
 
     # Create agent
-    model = make_topr_model(cfg, train_env, eval_env, device)
+    model, _ = make_topr_model(cfg, train_env, eval_env)
 
     # Create loss
     loss_module = make_loss(cfg.loss, model, device=device)
